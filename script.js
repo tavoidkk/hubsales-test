@@ -2,7 +2,17 @@
   'use strict';
 
   /* ============================================================
-     TEST TEXT - Spanish, no accents, no ñ, no special chars
+     WEBHOOK - Configura aqui la URL para enviar resultados
+     Ejemplos:
+       - Google Apps Script:  https://script.google.com/macros/s/.../exec
+       - Make / n8n:           https://hook.make.com/...
+       - Formspree:            https://formspree.io/f/...
+     Deja vacio para usar solo LocalStorage como respaldo.
+     ============================================================ */
+  var WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbykqsaOiNh690vrbrl1iOJ1ESr9YacEVeFYqokyntxAtzkAC74HqfM75coPWxW9tpeH/exec'; // <-- PEGA TU WEBHOOK AQUI
+
+  /* ============================================================
+     TEST TEXT
      ============================================================ */
   const TEST_TEXT = [
     "La ciencia y la tecnologia han transformado radicalmente nuestra sociedad en las ultimas decadas. Desde los primeros ordenadores que ocupaban habitaciones enteras hasta los potentes dispositivos que caben en nuestros bolsillos, el progreso ha sido verdaderamente asombroso. Cada nuevo descubrimiento abre las puertas a posibilidades que antes parecian imposibles.",
@@ -63,6 +73,7 @@
     dom.resultAccuracy = $('#resultAccuracy');
     dom.resultErrors = $('#resultErrors');
     dom.resultDetail = $('#resultDetail');
+    dom.webhookStatus = $('#webhookStatus');
     dom.newTestBtn = $('#newTestBtn');
     dom.adminBtn = $('#adminBtn');
     dom.closeAdmin = $('#closeAdmin');
@@ -124,6 +135,41 @@
 
   function clearAllResults() {
     localStorage.removeItem(STORAGE_KEY);
+  }
+
+  /* ============================================================
+     WEBHOOK SEND
+     ============================================================ */
+  function sendToWebhook(data) {
+    if (!WEBHOOK_URL) {
+      if (dom.webhookStatus) dom.webhookStatus.textContent = '';
+      return Promise.resolve();
+    }
+
+    dom.webhookStatus.innerHTML = '<span class="inline-block w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2 align-middle"></span>Enviando resultados...';
+
+    var body = {
+      cedula: data.cedula,
+      nombre: data.nombre,
+      apellido: data.apellido,
+      telefono: data.telefono,
+      wpm: data.wpm,
+      precision: data.precision,
+      errores: data.errores,
+      estado_anti_ia: data.alertaAntiIA,
+      fecha_hora: data.fecha,
+    };
+
+    return fetch(WEBHOOK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(function () {
+      dom.webhookStatus.innerHTML = '<span class="text-emerald-600 font-medium">Resultados guardados exitosamente</span>';
+    }).catch(function () {
+      dom.webhookStatus.innerHTML = '<span class="text-amber-600 font-medium">Fallo al enviar, datos guardados localmente</span>';
+    });
   }
 
   /* ============================================================
@@ -420,6 +466,8 @@
 
     dom.statusBadge.textContent = 'Completado';
     dom.statusBadge.className = 'text-sm text-blue-600';
+
+    sendToWebhook(data);
   }
 
   /* ============================================================
