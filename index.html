@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HubSales Test - Prueba de Mecanografia</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800 font-sans antialiased">
+
+  <!-- ============================================================ -->
+  <!-- SCREEN 1: Registration Form -->
+  <!-- ============================================================ -->
+  <section id="formScreen" class="min-h-screen flex items-center justify-center p-4 relative">
+    <!-- Admin access (discreet) -->
+    <button id="adminBtn" class="absolute top-4 right-4 text-xs text-gray-400 hover:text-gray-600 transition-colors uppercase tracking-widest">Admin</button>
+    <div class="w-full max-w-md">
+      <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-gray-800 tracking-tight">HubSales Test</h1>
+        <p class="text-gray-400 text-sm mt-2">Prueba de mecanografia de 1 minuto</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-gray-200 p-8 shadow-lg">
+        <form id="registrationForm" class="space-y-5" autocomplete="off">
+          <div>
+            <label for="cedula" class="block text-sm font-medium text-gray-600 mb-1">Cedula de Identidad</label>
+            <input type="text" id="cedula" name="cedula" required
+              class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all">
+          </div>
+          <div>
+            <label for="nombre" class="block text-sm font-medium text-gray-600 mb-1">Nombre</label>
+            <input type="text" id="nombre" name="nombre" required
+              class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all">
+          </div>
+          <div>
+            <label for="apellido" class="block text-sm font-medium text-gray-600 mb-1">Apellido</label>
+            <input type="text" id="apellido" name="apellido" required
+              class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all">
+          </div>
+          <div>
+            <label for="telefono" class="block text-sm font-medium text-gray-600 mb-1">Telefono</label>
+            <input type="tel" id="telefono" name="telefono" required
+              class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all">
+          </div>
+          <button type="submit"
+            class="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors duration-150 mt-2 shadow-sm">
+            Comenzar Prueba
+          </button>
+        </form>
+      </div>
+      <p class="text-center text-xs text-gray-400 mt-6">Al iniciar aceptas que tus datos se almacenen localmente</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SCREEN 2: Typing Test -->
+  <!-- ============================================================ -->
+  <section id="testScreen" class="hidden min-h-screen flex flex-col">
+    <!-- Top bar -->
+    <div class="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
+      <div class="text-sm text-gray-500 truncate max-w-[200px]" id="userInfo"></div>
+      <div id="timer" class="text-3xl font-bold tabular-nums tracking-wider text-gray-800">01:00</div>
+      <div class="text-sm text-gray-500" id="statusBadge">Listo</div>
+    </div>
+
+    <!-- Text display card -->
+    <div class="flex-1 flex items-center justify-center p-4 sm:p-8">
+      <div class="w-full max-w-3xl bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
+        <div id="textDisplay" class="text-lg sm:text-xl leading-relaxed tracking-wide select-none text-gray-400 min-h-[120px]"></div>
+      </div>
+    </div>
+
+    <!-- Hidden input for mobile keyboard -->
+    <textarea id="hiddenInput"
+      class="opacity-0 absolute h-0 w-0 pointer-events-none"
+      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+      aria-hidden="true" tabindex="-1"></textarea>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SCREEN 3: Results Modal -->
+  <!-- ============================================================ -->
+  <div id="resultModal" class="hidden fixed inset-0 z-40 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40"></div>
+    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-8 animate-fade-in border border-gray-200">
+      <h2 class="text-2xl font-bold text-gray-800 text-center mb-6">Resultados</h2>
+
+      <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="bg-gray-50 rounded-xl p-4 text-center border border-gray-100">
+          <div id="resultWpm" class="text-3xl font-bold text-blue-600">0</div>
+          <div class="text-xs text-gray-400 mt-1 font-medium">WPM</div>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-4 text-center border border-gray-100">
+          <div id="resultAccuracy" class="text-3xl font-bold text-emerald-600">0%</div>
+          <div class="text-xs text-gray-400 mt-1 font-medium">Precision</div>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-4 text-center border border-gray-100">
+          <div id="resultErrors" class="text-3xl font-bold text-red-500">0</div>
+          <div class="text-xs text-gray-400 mt-1 font-medium">Errores</div>
+        </div>
+      </div>
+
+      <div class="text-center text-sm text-gray-400 mb-6" id="resultDetail"></div>
+
+      <button id="newTestBtn"
+        class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-xl transition-colors shadow-sm">
+        Nueva Prueba
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SCREEN 4: Admin Panel -->
+  <!-- ============================================================ -->
+  <section id="adminPanel" class="hidden fixed inset-0 z-50 bg-white overflow-auto p-4 sm:p-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-bold text-gray-800">Panel de Administracion</h2>
+        <button id="closeAdmin" class="text-xs text-gray-400 hover:text-gray-700 transition-colors uppercase tracking-wider">Cerrar</button>
+      </div>
+
+      <div class="flex flex-wrap gap-3 mb-6">
+        <button id="exportCSV" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors shadow-sm">Exportar a Excel (CSV)</button>
+        <button id="clearDB" class="bg-red-100 hover:bg-red-200 text-red-700 text-sm font-medium px-4 py-2 rounded-lg transition-colors">Limpiar Base de Datos</button>
+      </div>
+
+      <div id="adminCount" class="text-sm text-gray-500 mb-3"></div>
+
+      <div class="overflow-x-auto">
+        <table id="adminTable" class="w-full text-sm">
+          <thead>
+            <tr class="text-gray-400 text-xs uppercase tracking-wider border-b border-gray-200">
+              <th class="text-left py-3 px-3">Cedula</th>
+              <th class="text-left py-3 px-3">Nombre</th>
+              <th class="text-left py-3 px-3">Apellido</th>
+              <th class="text-left py-3 px-3">Telefono</th>
+              <th class="text-right py-3 px-3">WPM</th>
+              <th class="text-right py-3 px-3">Precision</th>
+              <th class="text-right py-3 px-3">Errores</th>
+              <th class="text-left py-3 px-3">Fecha</th>
+              <th class="text-left py-3 px-3">Anti-IA</th>
+              <th class="text-center py-3 px-3">Accion</th>
+            </tr>
+          </thead>
+          <tbody id="adminTableBody"></tbody>
+        </table>
+      </div>
+
+      <div id="adminEmpty" class="hidden text-center text-gray-400 py-16">No hay registros almacenados.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- Toast Notification -->
+  <!-- ============================================================ -->
+  <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 hidden px-6 py-3 rounded-xl shadow-lg text-sm font-medium text-white transition-all duration-300 pointer-events-none"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
