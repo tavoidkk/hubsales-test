@@ -24,12 +24,12 @@
      TEST TEXT
      ============================================================ */
   const TEST_TEXT = [
-    "La ciencia y la tecnologia han transformado radicalmente nuestra sociedad en las ultimas decadas. Desde los primeros ordenadores que ocupaban habitaciones enteras hasta los potentes dispositivos que caben en nuestros bolsillos, el progreso ha sido verdaderamente asombroso. Cada nuevo descubrimiento abre las puertas a posibilidades que antes parecian imposibles.",
-    "El metodo cientifico sigue siendo la herramienta mas poderosa que tenemos para entender el mundo que nos rodea. A traves de la observacion, la formulacion de hipotesis, la experimentacion y el analisis de resultados, podemos obtener conocimiento confiable y verificable. Este enfoque riguroso nos ha permitido desarrollar desde vacunas que salvan millones de vidas hasta tecnologias de comunicacion que conectan a personas en todo el planeta.",
-    "En el ambito de la computacion, los algoritmos de busqueda y procesamiento de datos han revolucionado la forma en que accedemos a la informacion. Los motores de busqueda pueden examinar miles de millones de paginas web en fracciones de segundo, ofreciendonos respuestas a nuestras preguntas casi instantaneamente. La inteligencia artificial y el aprendizaje automatico estan llevando estas capacidades a nuevos niveles, permitiendo que las maquinas reconozcan patrones complejos y tomen decisiones basadas en datos.",
-    "La colaboracion internacional es fundamental para el avance del conocimiento. Cientificos e ingenieros de diferentes paises trabajan juntos en proyectos que trascienden las fronteras, compartiendo datos y recursos para abordar desafios globales. El telescopio espacial y los aceleradores de particulas son ejemplos de como la cooperacion puede lograr resultados que ningun pais podria alcanzar por si solo.",
-    "En el futuro, la tecnologia continuara evolucionando a un ritmo acelerado. La computacion cuantica, la biotecnologia y la exploracion espacial prometen abrir nuevas fronteras. La capacidad de adaptarnos y aprender continuamente sera cada vez mas importante en un mundo donde el cambio es la unica constante. La educacion y la curiosidad intelectual son las herramientas que nos permitiran navegar este futuro emocionante y lleno de posibilidades.",
-    "La programacion es una habilidad cada vez mas valorada en el mercado laboral actual. Aprender a codificar no solo permite crear aplicaciones y sitios web, sino que tambien desarrolla el pensamiento logico y la capacidad de resolver problemas complejos. La comunidad de desarrolladores comparte conocimiento a traves de foros, tutoriales y proyectos de codigo abierto, facilitando el aprendizaje continuo y la innovacion colectiva."
+    "La ciencia y la tecnología han transformado radicalmente nuestra sociedad en las últimas décadas. Desde los primeros ordenadores que ocupaban habitaciones enteras hasta los potentes dispositivos que caben en nuestros bolsillos, el progreso ha sido verdaderamente asombroso. Cada nuevo descubrimiento abre las puertas a posibilidades que antes parecían imposibles.",
+    "El método científico sigue siendo la herramienta más poderosa que tenemos para entender el mundo que nos rodea. A través de la observación, la formulación de hipótesis, la experimentación y el análisis de resultados, podemos obtener conocimiento confiable y verificable. Este enfoque riguroso nos ha permitido desarrollar desde vacunas que salvan millones de vidas hasta tecnologías de comunicación que conectan a personas en todo el planeta.",
+    "En el ámbito de la computación, los algoritmos de búsqueda y procesamiento de datos han revolucionado la forma en que accedemos a la información. Los motores de búsqueda pueden examinar miles de millones de páginas web en fracciones de segundo, ofreciéndonos respuestas a nuestras preguntas casi instantáneamente. La inteligencia artificial y el aprendizaje automático están llevando estas capacidades a nuevos niveles, permitiendo que las máquinas reconozcan patrones complejos y tomen decisiones basadas en datos.",
+    "La colaboración internacional es fundamental para el avance del conocimiento. Científicos e ingenieros de diferentes países trabajan juntos en proyectos que trascienden las fronteras, compartiendo datos y recursos para abordar desafíos globales. El telescopio espacial y los aceleradores de partículas son ejemplos de cómo la cooperación puede lograr resultados que ningún país podría alcanzar por sí solo.",
+    "En el futuro, la tecnología continuará evolucionando a un ritmo acelerado. La computación cuántica, la biotecnología y la exploración espacial prometen abrir nuevas fronteras. La capacidad de adaptarnos y aprender continuamente será cada vez más importante en un mundo donde el cambio es la única constante. La educación y la curiosidad intelectual son las herramientas que nos permitirán navegar este futuro emocionante y lleno de posibilidades.",
+    "La programación es una habilidad cada vez más valorada en el mercado laboral actual. Aprender a codificar no solo permite crear aplicaciones y sitios web, sino que también desarrolla el pensamiento lógico y la capacidad de resolver problemas complejos. La comunidad de desarrolladores comparte conocimiento a través de foros, tutoriales y proyectos de código abierto, facilitando el aprendizaje continuo y la innovación colectiva."
   ].join(' ');
 
   /* ============================================================
@@ -86,6 +86,7 @@
     dom.webhookStatus = $('#webhookStatus');
     dom.newTestBtn = $('#newTestBtn');
     dom.adminBtn = $('#adminBtn');
+    dom.refreshAdmin = $('#refreshAdmin');
     dom.closeAdmin = $('#closeAdmin');
     dom.exportCSV = $('#exportCSV');
     dom.clearDB = $('#clearDB');
@@ -764,6 +765,10 @@
     dom.newTestBtn.addEventListener('click', resetToForm);
 
     dom.adminBtn.addEventListener('click', openAdmin);
+    dom.refreshAdmin.addEventListener('click', function () {
+      showAdminPanel();
+      showToast('Registros actualizados.', 'success');
+    });
     dom.closeAdmin.addEventListener('click', closeAdminPanel);
     dom.exportCSV.addEventListener('click', exportCSV);
     dom.clearDB.addEventListener('click', clearDatabase);
