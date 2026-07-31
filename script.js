@@ -12,6 +12,15 @@
   var WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbykqsaOiNh690vrbrl1iOJ1ESr9YacEVeFYqokyntxAtzkAC74HqfM75coPWxW9tpeH/exec'; // <-- PEGA TU WEBHOOK AQUI
 
   /* ============================================================
+     API - Backend centralizado en Netlify (Funciones + Blobs)
+     No cambies esta URL: funciona en el mismo dominio del sitio.
+     La clave de admin debe coincidir con la variable de entorno
+     ADMIN_KEY en Netlify (si no esta configurada, se usa la de abajo).
+     ============================================================ */
+  var API_URL = '/api/attempts';
+  var ADMIN_PASSWORD = 'Athena2026*';
+
+  /* ============================================================
      TEST TEXT
      ============================================================ */
   const TEST_TEXT = [
@@ -73,6 +82,7 @@
     dom.resultAccuracy = $('#resultAccuracy');
     dom.resultErrors = $('#resultErrors');
     dom.resultDetail = $('#resultDetail');
+    dom.apiStatus = $('#apiStatus');
     dom.webhookStatus = $('#webhookStatus');
     dom.newTestBtn = $('#newTestBtn');
     dom.adminBtn = $('#adminBtn');
@@ -138,15 +148,85 @@
   }
 
   /* ============================================================
+     API REMOTA (Netlify Functions + Blobs)
+     ============================================================ */
+  function apiFetch(url, options) {
+    return fetch(url, options || {}).then(function (res) {
+      return res.json().catch(function () { return null; });
+    });
+  }
+
+  function checkCedulaRemote(cedula) {
+    return apiFetch(API_URL + '?cedula=' + encodeURIComponent(cedula))
+      .then(function (res) {
+        return !!(res && res.exists);
+      })
+      .catch(function () {
+        return cedulaExists(cedula);
+      });
+  }
+
+  function sendToApi(data) {
+    if (dom.apiStatus) {
+      dom.apiStatus.innerHTML = '<span class="inline-block w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2 align-middle"></span>Enviando resultados...';
+    }
+
+    var body = {
+      cedula: data.cedula,
+      nombre: data.nombre,
+      apellido: data.apellido,
+      telefono: data.telefono,
+      wpm: data.wpm,
+      precision: data.precision,
+      errores: data.errores,
+      estado_anti_ia: data.alertaAntiIA,
+      fecha: data.fecha,
+    };
+
+    return apiFetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(function (res) {
+      if (res && res.ok) {
+        if (dom.apiStatus) dom.apiStatus.innerHTML = '<span class="text-emerald-600 font-medium">Resultados guardados exitosamente</span>';
+        return true;
+      }
+      if (dom.apiStatus) dom.apiStatus.innerHTML = '<span class="text-amber-600 font-medium">Fallo al enviar, datos guardados localmente</span>';
+      return false;
+    }).catch(function () {
+      if (dom.apiStatus) dom.apiStatus.innerHTML = '<span class="text-amber-600 font-medium">Fallo al enviar, datos guardados localmente</span>';
+      return false;
+    });
+  }
+
+  function fetchAllRemote(adminKey) {
+    return apiFetch(API_URL, {
+      headers: { 'x-admin-key': adminKey },
+    }).then(function (res) {
+      if (res && res.data) return res.data;
+      if (res && res.error) throw new Error(res.error);
+      throw new Error('Respuesta invalida');
+    });
+  }
+
+  function deleteRemote(cedula, adminKey) {
+    return apiFetch(API_URL + (cedula ? '?cedula=' + encodeURIComponent(cedula) : ''), {
+      method: 'DELETE',
+      headers: { 'x-admin-key': adminKey },
+    });
+  }
+
+  /* ============================================================
      WEBHOOK SEND
      ============================================================ */
   function sendToWebhook(data) {
     if (!WEBHOOK_URL) {
-      if (dom.webhookStatus) dom.webhookStatus.textContent = '';
+      if (dom.webhookStatus) dom.webhookStatus.innerHTML = '<span class="text-gray-400 font-medium">Google Sheets no configurado</span>';
       return Promise.resolve();
     }
 
-    dom.webhookStatus.innerHTML = '<span class="inline-block w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2 align-middle"></span>Enviando resultados...';
+    dom.webhookStatus.innerHTML = '<span class="inline-block w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2 align-middle"></span>Enviando copia a Google Sheets...';
 
     var body = {
       cedula: data.cedula,
@@ -166,9 +246,9 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     }).then(function () {
-      dom.webhookStatus.innerHTML = '<span class="text-emerald-600 font-medium">Resultados guardados exitosamente</span>';
+      dom.webhookStatus.innerHTML = '<span class="text-emerald-600 font-medium">Copia enviada a Google Sheets</span>';
     }).catch(function () {
-      dom.webhookStatus.innerHTML = '<span class="text-amber-600 font-medium">Fallo al enviar, datos guardados localmente</span>';
+      dom.webhookStatus.innerHTML = '<span class="text-amber-600 font-medium">Copia a Google Sheets no disponible</span>';
     });
   }
 
@@ -187,13 +267,22 @@
       return;
     }
 
-    if (cedulaExists(cedula)) {
-      showToast('Esta cedula ya completo su intento.', 'error');
-      return;
-    }
+    var submitBtn = dom.registrationForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Verificando...';
 
-    state.userData = { cedula: cedula, nombre: nombre, apellido: apellido, telefono: telefono };
-    startTest();
+    checkCedulaRemote(cedula).then(function (exists) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Comenzar Prueba';
+
+      if (exists) {
+        showToast('Esta cedula ya completo su intento.', 'error');
+        return;
+      }
+
+      state.userData = { cedula: cedula, nombre: nombre, apellido: apellido, telefono: telefono };
+      startTest();
+    });
   }
 
   /* ============================================================
@@ -467,7 +556,9 @@
     dom.statusBadge.textContent = 'Completado';
     dom.statusBadge.className = 'text-sm text-blue-600';
 
-    sendToWebhook(data);
+    sendToApi(data).then(function () {
+      sendToWebhook(data);
+    });
   }
 
   /* ============================================================
@@ -498,22 +589,44 @@
   /* ============================================================
      ADMIN PANEL
      ============================================================ */
+  var currentAdminKey = null;
+  var lastAdminRecords = null;
+
   function openAdmin() {
     var pwd = prompt('Ingrese la clave de administrador:');
     if (pwd === null) return;
-    if (pwd !== 'Athena2026*') {
+    if (pwd !== ADMIN_PASSWORD) {
       showToast('Clave incorrecta', 'error');
       return;
     }
+    currentAdminKey = pwd;
     showAdminPanel();
   }
 
   function showAdminPanel() {
-    var results = getResults();
-
     dom.adminPanel.classList.remove('hidden');
+    dom.adminCount.textContent = 'Cargando registros...';
+    dom.adminTableBody.innerHTML = '';
+    dom.adminEmpty.classList.add('hidden');
 
-    if (results.length === 0) {
+    fetchAllRemote(currentAdminKey).then(function (records) {
+      renderAdminTable(records);
+    }).catch(function () {
+      var local = getResults();
+      if (local.length > 0) {
+        showToast('Sin conexion al servidor - mostrando datos locales.', 'warning');
+        renderAdminTable(local);
+      } else {
+        dom.adminCount.textContent = '0 registros';
+        dom.adminEmpty.classList.remove('hidden');
+      }
+    });
+  }
+
+  function renderAdminTable(results) {
+    lastAdminRecords = results || null;
+
+    if (!results || results.length === 0) {
       dom.adminEmpty.classList.remove('hidden');
       dom.adminTableBody.innerHTML = '';
       dom.adminCount.textContent = '0 registros';
@@ -528,13 +641,14 @@
 
     for (var i = 0; i < results.length; i++) {
       var r = results[i];
-      var fecha = new Date(r.fecha);
+      var fecha = new Date(r.fecha || r.fecha_hora);
       var fechaStr = fecha.toLocaleDateString('es-ES', {
         year: 'numeric', month: '2-digit', day: '2-digit',
         hour: '2-digit', minute: '2-digit'
       });
 
-      var validityClass = r.alertaAntiIA === 'Pasa' ? 'text-emerald-600' : 'text-amber-600';
+      var validityClass = (r.alertaAntiIA === 'Pasa' || r.estado_anti_ia === 'Pasa') ? 'text-emerald-600' : 'text-amber-600';
+      var validity = r.alertaAntiIA || r.estado_anti_ia || 'Pasa';
 
       html += '<tr>' +
         '<td class="font-mono text-xs">' + escapeHtml(r.cedula) + '</td>' +
@@ -545,7 +659,7 @@
         '<td class="text-right font-mono">' + r.precision + '%</td>' +
         '<td class="text-right font-mono">' + r.errores + '</td>' +
         '<td class="text-xs whitespace-nowrap">' + fechaStr + '</td>' +
-        '<td class="text-xs ' + validityClass + '">' + escapeHtml(r.alertaAntiIA) + '</td>' +
+        '<td class="text-xs ' + validityClass + '">' + escapeHtml(validity) + '</td>' +
         '<td class="text-center"><button class="btn-delete" data-cedula="' + escapeHtml(r.cedula) + '">Eliminar</button></td>' +
         '</tr>';
     }
@@ -556,9 +670,11 @@
       btn.addEventListener('click', function () {
         var ced = btn.getAttribute('data-cedula');
         if (confirm('Eliminar registro de cedula ' + ced + '?')) {
-          deleteResultByCedula(ced);
-          showAdminPanel();
-          showToast('Registro eliminado.', 'success');
+          deleteRemote(ced, currentAdminKey).catch(function () { return null; }).then(function () {
+            deleteResultByCedula(ced);
+            showAdminPanel();
+            showToast('Registro eliminado.', 'success');
+          });
         }
       });
     });
@@ -572,8 +688,8 @@
      EXPORT CSV
      ============================================================ */
   function exportCSV() {
-    var results = getResults();
-    if (results.length === 0) {
+    var results = lastAdminRecords || getResults();
+    if (!results || results.length === 0) {
       showToast('No hay datos para exportar.', 'warning');
       return;
     }
@@ -591,8 +707,8 @@
         r.wpm,
         r.precision,
         r.errores,
-        csvEscape(new Date(r.fecha).toISOString()),
-        csvEscape(r.alertaAntiIA),
+        csvEscape(new Date(r.fecha || r.fecha_hora).toISOString()),
+        csvEscape(r.alertaAntiIA || r.estado_anti_ia || 'Pasa'),
       ];
       csvRows.push(row.join(','));
     }
@@ -622,15 +738,12 @@
      CLEAR DATABASE
      ============================================================ */
   function clearDatabase() {
-    var results = getResults();
-    if (results.length === 0) {
-      showToast('La base de datos ya esta vacia.', 'info');
-      return;
-    }
-    if (confirm('Esta accion eliminara TODOS los registros. Desea continuar?')) {
-      clearAllResults();
-      showAdminPanel();
-      showToast('Base de datos limpiada.', 'success');
+    if (confirm('Esta accion eliminara TODOS los registros (servidor y local). Desea continuar?')) {
+      deleteRemote(null, currentAdminKey).catch(function () { return null; }).then(function () {
+        clearAllResults();
+        showAdminPanel();
+        showToast('Base de datos limpiada.', 'success');
+      });
     }
   }
 
